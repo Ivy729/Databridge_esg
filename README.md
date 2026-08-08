@@ -1,11 +1,11 @@
-<div align="center">
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+  # AI Sustainability Platform Design
 
-  <h1>Built with AI Studio</h2>
+  This is a code bundle for AI Sustainability Platform Design. The original project is available at https://www.figma.com/design/Q7MuJHEihbwy9r6a0W3NIr/AI-Sustainability-Platform-Design.
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+  ## Running the code
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+  Run `npm i` to install the dependencies.
 
-</div>
+  Run `npm run dev` to start the development server.
+  

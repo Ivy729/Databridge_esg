@@ -1,0 +1,6 @@
+{
+  "name": "DataBridge ESG - E&E SME Carbon Reporting",
+  "description": "Mobile app for Malaysian E&E manufacturing SMEs: scan electricity bills via AI OCR, calculate Scope 1 & 2 emissions, and generate ISSB S1/S2 and GRI 302/305 aligned traceable PDF carbon reports with tamper-evident SHA-256 hashes.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
