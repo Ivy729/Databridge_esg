@@ -1,6 +1,49 @@
 import { UtilityBillData, ConfidenceStatus } from "./types";
 
 /**
+ * Resizes and compresses image to prevent Vercel 4.5MB payload limit issues while preserving text legibility
+ */
+async function compressImageForOCR(dataUrl: string, maxDim = 1800, quality = 0.85): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+
+      if (width <= maxDim && height <= maxDim && dataUrl.length < 2000000) {
+        return resolve(dataUrl);
+      }
+
+      if (width > height) {
+        if (width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        }
+      } else {
+        if (height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return resolve(dataUrl);
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+/**
  * Converts File object to base64 Data URL
  */
 async function fileToBase64(file: File): Promise<string> {
@@ -22,24 +65,27 @@ export async function performAIOCR(
   onProgress?: (stepText: string) => void
 ): Promise<UtilityBillData> {
   let fileName = "Scanned_Bill.jpg";
-  let imageDataUrl = "";
+  let rawDataUrl = "";
   let mimeType = "image/jpeg";
 
   if (typeof fileOrDataUrl !== "string") {
     fileName = fileOrDataUrl.name;
     mimeType = fileOrDataUrl.type || "image/jpeg";
-    imageDataUrl = await fileToBase64(fileOrDataUrl);
+    rawDataUrl = await fileToBase64(fileOrDataUrl);
   } else {
-    imageDataUrl = fileOrDataUrl;
+    rawDataUrl = fileOrDataUrl;
     if (fileOrDataUrl.startsWith("data:")) {
       const mimeMatch = fileOrDataUrl.match(/^data:(image\/\w+);base64,/);
       if (mimeMatch) mimeType = mimeMatch[1];
     }
   }
 
+  // Optimize image size to bypass Vercel 4.5MB payload limits
+  const imageDataUrl = await compressImageForOCR(rawDataUrl);
+
   // Step 1: Scanning Image
   if (onProgress) onProgress("Scanning electricity bill layout & sections…");
-  await new Promise((res) => setTimeout(res, 600));
+  await new Promise((res) => setTimeout(res, 500));
 
   // Step 2: Running Gemini AI Vision Extraction
   if (onProgress) onProgress("Analyzing visible bill text with Gemini AI Vision…");
@@ -50,7 +96,7 @@ export async function performAIOCR(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         imageBase64: imageDataUrl,
-        mimeType,
+        mimeType: "image/jpeg",
         fileName,
       }),
     });
